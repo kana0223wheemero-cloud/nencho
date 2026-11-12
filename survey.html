@@ -86,7 +86,7 @@ textarea { min-height: 96px; resize: vertical; }
 <div class="wrap" id="app">
   <header>
     <h1>年末調整かんたん計算ツール<br>どの機能が必要か教えてください</h1>
-    <p class="lead">年末調整（令和8年分）の税金を、年収や家族の情報を入れるだけで計算できるツールを作っています。今ある機能をまとめたので、それぞれ「必要」「いらない」「どちらでも」を選んで、最後に「LINEで回答を送る」を押してください。3分くらいで終わります。</p>
+    <p class="lead">年末調整（令和8年分）の税金を、年収や家族の情報を入れるだけで計算できるツールを作っています。今ある機能をまとめたので、それぞれ「必要」「いらない」「どちらでも」を選んで、最後に「LINEで回答を送る」を押してください。2〜3分で終わります。</p>
   </header>
 
   <div class="try">
@@ -111,12 +111,8 @@ textarea { min-height: 96px; resize: vertical; }
   </section>
 
   <section>
-    <div class="sec-head"><h2>ひとこと</h2></div>
-    <label class="f" for="name">名前かニックネーム<span>誰の意見か分かるように</span>
-      <input type="text" id="name" placeholder="たろう"></label>
-    <label class="f" for="hard">使いにくかったところ・分かりにくかった言葉<span>例：「源泉徴収税額」がどこに書いてあるか分からない</span>
-      <textarea id="hard"></textarea></label>
-    <label class="f" for="wish">ほかにほしい機能、自由な意見
+    <div class="sec-head"><h2>ほかに何かあれば</h2></div>
+    <label class="f" for="wish">ほしい機能・自由な意見<span>なければ空欄のままで大丈夫です</span>
       <textarea id="wish"></textarea></label>
     <div class="actions">
       <button class="btn primary" id="line" type="button">LINEで回答を送る</button>
@@ -184,25 +180,25 @@ function renderAll() {
 }
 
 function buildText() {
-  const lines = ['【年末調整ツールへの回答】', '名前：' + ($('name').value.trim() || '（未記入）'), '', '■今ある機能'];
+  const lines = ['【年末調整ツールへの回答】', '', '■今ある機能'];
   for (const [k, t] of FEATURES) lines.push(`・${t}：${answers[k] ? LABELS[answers[k]] : '未回答'}`);
   lines.push('', '■追加候補');
   for (const [k, t] of IDEAS) lines.push(`・${t}：${answers[k] ? IDEA_LABELS[answers[k]] : '未回答'}`);
-  lines.push('', '■使いにくかったところ', $('hard').value.trim() || '（なし）', '', '■ほかにほしい機能・意見', $('wish').value.trim() || '（なし）');
+  lines.push('', '■ほしい機能・自由な意見', $('wish').value.trim() || '（なし）');
   return lines.join('\n');
 }
 
 // 下書き（このブラウザのみ）
 function saveDraft() {
-  try { localStorage.setItem('nencho-fb-draft', JSON.stringify({ answers, name: $('name').value, hard: $('hard').value, wish: $('wish').value })); } catch (e) {}
+  try { localStorage.setItem('nencho-fb-draft', JSON.stringify({ answers, wish: $('wish').value })); } catch (e) {}
 }
 function loadDraft() {
   try {
     const d = JSON.parse(localStorage.getItem('nencho-fb-draft') || 'null'); if (!d) return;
-    Object.assign(answers, d.answers || {}); $('name').value = d.name || ''; $('hard').value = d.hard || ''; $('wish').value = d.wish || '';
+    Object.assign(answers, d.answers || {}); $('wish').value = d.wish || '';
   } catch (e) {}
 }
-['name', 'hard', 'wish'].forEach(id => $(id).addEventListener('input', saveDraft));
+$('wish').addEventListener('input', saveDraft);
 
 function setStatus(msg, cls) { const s = $('status'); s.textContent = msg; s.className = 'status' + (cls ? ' ' + cls : ''); }
 
@@ -218,7 +214,7 @@ $('copy').onclick = () => {
 // LINEで送る（LINEアプリが開き、文章が入った状態になる）
 $('line').onclick = () => {
   const answered = Object.values(answers).filter(Boolean).length;
-  if (!answered && !$('hard').value.trim() && !$('wish').value.trim()) { setStatus('どれか1つ以上答えてから送ってください。', 'err'); return; }
+  if (!answered && !$('wish').value.trim()) { setStatus('どれか1つ以上答えてから送ってください。', 'err'); return; }
   window.location.href = 'https://line.me/R/msg/text/?' + encodeURIComponent(buildText());
 };
 function renderTally() {}
