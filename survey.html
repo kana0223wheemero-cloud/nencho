@@ -1,0 +1,229 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>年末調整ツールの意見募集</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=M+PLUS+1p:wght@400;500;700&family=Zen+Kaku+Gothic+New:wght@700&display=swap">
+<style>
+/* Layout: one narrow reading column, a checklist like a 扶養控除等申告書 — each row a feature with a 3-way answer stamp */
+:root {
+  --bg: #f4f6f8; --paper: #ffffff; --ink: #1c2430; --muted: #5d6878; --line: #dde2e8;
+  --accent: #1f6b5c; --accent-soft: #e2f1ec; --need: #1f6b5c; --skip: #b4462f; --skip-soft: #fbe9e4;
+  --maybe: #6a6f79; --maybe-soft: #eceef1;
+  --f-display: "Zen Kaku Gothic New", "Hiragino Sans", "Yu Gothic UI", sans-serif;
+  --f-body: "M PLUS 1p", "Hiragino Sans", "Yu Gothic UI", "Meiryo", sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #12171c; --paper: #1a2128; --ink: #e6ebf0; --muted: #9aa6b4; --line: #2b343e;
+    --accent: #5cc2a8; --accent-soft: #17302b; --need: #5cc2a8; --skip: #f08a72; --skip-soft: #3a211b;
+    --maybe: #a4abb6; --maybe-soft: #262d36; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #12171c; --paper: #1a2128; --ink: #e6ebf0; --muted: #9aa6b4; --line: #2b343e;
+  --accent: #5cc2a8; --accent-soft: #17302b; --need: #5cc2a8; --skip: #f08a72; --skip-soft: #3a211b;
+  --maybe: #a4abb6; --maybe-soft: #262d36; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font-family: var(--f-body); font-size: 15px; line-height: 1.75; }
+.wrap { max-width: 760px; margin: 0 auto; padding-block: 32px 64px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: grid; gap: 28px; }
+h1, h2 { font-family: var(--f-display); text-wrap: balance; margin: 0; }
+h1 { font-size: 1.7rem; line-height: 1.35; }
+h2 { font-size: 1.15rem; }
+.lead { color: var(--muted); margin: 8px 0 0; }
+.try { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; background: var(--accent-soft);
+  border-radius: 10px; padding: 14px 16px; }
+.try p { margin: 0; flex: 1 1 260px; min-width: 0; }
+.try a { background: var(--accent); color: var(--paper); text-decoration: none; padding: 9px 16px; border-radius: 8px; font-weight: 700; white-space: nowrap; }
+.try a:focus-visible, button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+section { display: grid; gap: 12px; }
+.sec-head p { margin: 4px 0 0; color: var(--muted); font-size: .9rem; }
+.list { background: var(--paper); border: 1px solid var(--line); border-radius: 12px; }
+.item { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px 16px; padding: 14px 16px; align-items: center; }
+.item + .item { border-top: 1px solid var(--line); }
+.item h3 { margin: 0; font-size: 1rem; font-weight: 700; }
+.item p { margin: 2px 0 0; color: var(--muted); font-size: .88rem; }
+@media (max-width: 560px) { .item { grid-template-columns: minmax(0, 1fr); } }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+.seg button { border: 0; background: var(--paper); color: var(--ink); font: inherit; font-size: .85rem;
+  padding: 6px 12px; cursor: pointer; }
+.seg button + button { border-left: 1px solid var(--line); }
+.seg button[aria-pressed="true"][data-v="need"] { background: var(--accent-soft); color: var(--need); font-weight: 700; }
+.seg button[aria-pressed="true"][data-v="skip"] { background: var(--skip-soft); color: var(--skip); font-weight: 700; }
+.seg button[aria-pressed="true"][data-v="maybe"] { background: var(--maybe-soft); color: var(--maybe); font-weight: 700; }
+.tally { display: none; font-size: .8rem; color: var(--muted); grid-column: 1 / -1; font-variant-numeric: tabular-nums; }
+.owner .tally { display: block; }
+.cant { background: var(--paper); border: 1px dashed var(--line); border-radius: 12px; padding: 14px 16px 14px 34px; margin: 0; color: var(--muted); }
+.cant li + li { margin-top: 4px; }
+label.f { display: grid; gap: 4px; font-weight: 700; font-size: .92rem; }
+label.f span { font-weight: 400; color: var(--muted); font-size: .85rem; }
+input[type=text], textarea { width: 100%; font: inherit; color: var(--ink); background: var(--paper);
+  border: 1px solid var(--line); border-radius: 8px; padding: 9px 11px; }
+textarea { min-height: 96px; resize: vertical; }
+.actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.btn { font: inherit; font-weight: 700; border-radius: 8px; padding: 10px 18px; cursor: pointer; border: 1px solid var(--accent); }
+.btn.primary { background: var(--accent); color: var(--paper); }
+.btn.ghost { background: var(--paper); color: var(--accent); }
+.btn:disabled { opacity: .5; cursor: default; }
+.status { font-size: .88rem; color: var(--muted); }
+.status.ok { color: var(--need); font-weight: 700; }
+.status.err { color: var(--skip); }
+#copyBox { width: 100%; min-height: 160px; font-size: .85rem; }
+.responses { display: grid; gap: 10px; }
+.resp { background: var(--paper); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; font-size: .9rem; }
+.resp b { font-family: var(--f-display); }
+.resp p { margin: 4px 0 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+.resp .k { color: var(--muted); font-size: .8rem; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+</head>
+<body>
+<div class="wrap" id="app">
+  <header>
+    <h1>年末調整かんたん計算ツール<br>どの機能が必要か教えてください</h1>
+    <p class="lead">年末調整（令和8年分）の税金を、年収や家族の情報を入れるだけで計算できるツールを作っています。今ある機能をまとめたので、それぞれ「必要」「いらない」「どちらでも」を選んで、最後に「LINEで回答を送る」を押してください。3分くらいで終わります。</p>
+  </header>
+
+  <div class="try">
+    <p><b>まず触ってみてください。</b>試作版が動きます（ログイン不要）。入力した数字はあなたのブラウザにだけ残り、ほかの人には見えません。</p>
+    <a href="index.html" target="_blank" rel="noopener">試作版を開く</a>
+  </div>
+
+  <section>
+    <div class="sec-head">
+      <h2>今できること</h2>
+      <p>入力すると、右側に「戻ってくるお金」か「追加で払うお金」がすぐ表示されます。</p>
+    </div>
+    <div class="list" id="features"></div>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <h2>今はできないこと（追加するか検討中）</h2>
+      <p>あったら使いたいものに「ほしい」をつけてください。</p>
+    </div>
+    <div class="list" id="ideas"></div>
+  </section>
+
+  <section>
+    <div class="sec-head"><h2>ひとこと</h2></div>
+    <label class="f" for="name">名前かニックネーム<span>誰の意見か分かるように</span>
+      <input type="text" id="name" placeholder="たろう"></label>
+    <label class="f" for="hard">使いにくかったところ・分かりにくかった言葉<span>例：「源泉徴収税額」がどこに書いてあるか分からない</span>
+      <textarea id="hard"></textarea></label>
+    <label class="f" for="wish">ほかにほしい機能、自由な意見
+      <textarea id="wish"></textarea></label>
+    <div class="actions">
+      <button class="btn primary" id="line" type="button">LINEで回答を送る</button>
+      <button class="btn ghost" id="copy" type="button">回答をコピーする</button>
+      <span class="status" id="status" role="status"></span>
+    </div>
+    <textarea id="copyBox" hidden readonly></textarea>
+  </section>
+
+</div>
+
+<script>
+const FEATURES = [
+  ['income', '年収の計算（3通り）', '「月給×月数＋賞与」「1〜12月を1か月ずつ入力」「年収を直接入力」から選べる'],
+  ['refund', '還付・追加徴収の表示', '今年すでに引かれた所得税を入れると、戻ってくる金額か追加で払う金額を大きく表示'],
+  ['self', '本人の控除', '障害者・寡婦・ひとり親・勤労学生をチェックするだけで反映'],
+  ['spouse', '配偶者控除の自動判定', '配偶者の年収を入れると、配偶者控除か配偶者特別控除か、いくらかを自動で判定'],
+  ['family', '扶養家族の自動判定', '家族ごとに年齢と年収を入れると、扶養控除・特定親族特別控除（19〜22歳）を判定。人数は自由に追加できる'],
+  ['social', '社会保険料の推計', '金額が分からなくても「年収の約15%」でざっくり入れられるボタン。iDeCoや国民年金も入力できる'],
+  ['insurance', '生命保険・地震保険の控除計算', '払った保険料を入れるだけで控除額を自動計算（新制度のみ）'],
+  ['housing', '住宅ローン控除', '申告書に書いた控除額を入れると税額から差し引く'],
+  ['breakdown', '計算の内訳と仕組みの説明', '年収 → 給与所得 → 控除 → 課税所得 → 税額の流れを1行ずつ表示。仕組みの説明つき'],
+  ['law', '2026年の改正に対応', '178万円の壁（基礎控除104万円など）、扶養の年収136万円の新しい基準で計算'],
+  ['autosave', '入力の自動保存', '閉じても同じブラウザなら入力内容が残る。リセットボタンで消せる'],
+];
+const IDEAS = [
+  ['takehome', '手取り額の計算', '年収から税金・社会保険料を引いた、実際に受け取れる金額'],
+  ['resident', '住民税の計算', '来年6月から引かれる住民税の目安'],
+  ['form', '申告書の書き方ガイド', '会社に出す申告書のどの欄に何を書けばいいかを案内'],
+  ['wall', '年収の壁シミュレーション', '配偶者や子どもがあといくら働くと税金や扶養が変わるかをグラフで表示'],
+  ['glossary', '用語の解説', '「給与所得」「源泉徴収」などの言葉をタップすると説明が出る'],
+  ['wizard', '質問に答えていく形式', '「結婚していますか？」のように1問ずつ答えて進む画面'],
+  ['oldlife', '旧制度の生命保険料', '2011年以前に契約した生命保険の控除計算'],
+  ['side', '副業・給与以外の収入', '副業や年金など、給与以外の所得がある人の計算'],
+];
+const LABELS = { need: '必要', maybe: 'どちらでも', skip: 'いらない' };
+const IDEA_LABELS = { need: 'ほしい', maybe: 'どちらでも', skip: 'いらない' };
+const answers = {};
+const $ = id => document.getElementById(id);
+
+function renderList(el, items, labels) {
+  el.innerHTML = '';
+  for (const [key, title, desc] of items) {
+    const row = document.createElement('div'); row.className = 'item';
+    const text = document.createElement('div');
+    const h = document.createElement('h3'); h.textContent = title;
+    const p = document.createElement('p'); p.textContent = desc;
+    text.append(h, p);
+    const seg = document.createElement('div'); seg.className = 'seg'; seg.setAttribute('role', 'group'); seg.setAttribute('aria-label', title);
+    for (const v of ['need', 'maybe', 'skip']) {
+      const b = document.createElement('button'); b.type = 'button'; b.dataset.v = v; b.textContent = labels[v];
+      b.setAttribute('aria-pressed', answers[key] === v ? 'true' : 'false');
+      b.onclick = () => { answers[key] = answers[key] === v ? undefined : v; saveDraft(); renderAll(); };
+      seg.append(b);
+    }
+    const tally = document.createElement('div'); tally.className = 'tally'; tally.id = 'tally-' + key;
+    row.append(text, seg, tally);
+    el.append(row);
+  }
+}
+function renderAll() {
+  renderList($('features'), FEATURES, LABELS);
+  renderList($('ideas'), IDEAS, IDEA_LABELS);
+  renderTally();
+}
+
+function buildText() {
+  const lines = ['【年末調整ツールへの回答】', '名前：' + ($('name').value.trim() || '（未記入）'), '', '■今ある機能'];
+  for (const [k, t] of FEATURES) lines.push(`・${t}：${answers[k] ? LABELS[answers[k]] : '未回答'}`);
+  lines.push('', '■追加候補');
+  for (const [k, t] of IDEAS) lines.push(`・${t}：${answers[k] ? IDEA_LABELS[answers[k]] : '未回答'}`);
+  lines.push('', '■使いにくかったところ', $('hard').value.trim() || '（なし）', '', '■ほかにほしい機能・意見', $('wish').value.trim() || '（なし）');
+  return lines.join('\n');
+}
+
+// 下書き（このブラウザのみ）
+function saveDraft() {
+  try { localStorage.setItem('nencho-fb-draft', JSON.stringify({ answers, name: $('name').value, hard: $('hard').value, wish: $('wish').value })); } catch (e) {}
+}
+function loadDraft() {
+  try {
+    const d = JSON.parse(localStorage.getItem('nencho-fb-draft') || 'null'); if (!d) return;
+    Object.assign(answers, d.answers || {}); $('name').value = d.name || ''; $('hard').value = d.hard || ''; $('wish').value = d.wish || '';
+  } catch (e) {}
+}
+['name', 'hard', 'wish'].forEach(id => $(id).addEventListener('input', saveDraft));
+
+function setStatus(msg, cls) { const s = $('status'); s.textContent = msg; s.className = 'status' + (cls ? ' ' + cls : ''); }
+
+$('copy').onclick = () => {
+  const text = buildText();
+  const box = $('copyBox'); box.value = text; box.hidden = false;
+  const fallback = () => { box.focus(); box.select(); setStatus('下の文章を選択しました。コピーしてLINEなどで送ってください。'); };
+  try {
+    navigator.clipboard.writeText(text).then(() => setStatus('コピーしました。LINEやメールに貼り付けて送ってください。', 'ok'), fallback);
+  } catch (e) { fallback(); }
+};
+
+// LINEで送る（LINEアプリが開き、文章が入った状態になる）
+$('line').onclick = () => {
+  const answered = Object.values(answers).filter(Boolean).length;
+  if (!answered && !$('hard').value.trim() && !$('wish').value.trim()) { setStatus('どれか1つ以上答えてから送ってください。', 'err'); return; }
+  window.location.href = 'https://line.me/R/msg/text/?' + encodeURIComponent(buildText());
+};
+function renderTally() {}
+
+loadDraft(); renderAll();
+</script>
+</body>
+</html>
